@@ -6,6 +6,35 @@ import sys,pygame,random
         # Game Rectangles
         # Rect(x,y,width,height) -> these are empty rectangles
         # to actually visualize this rectangles we need to draw them -> pygame.draw(surface,color,rect)
+class Button():
+	def __init__(self, image, pos, text_input, font, base_color, hovering_color):
+		self.image = image
+		self.x_pos = pos[0]
+		self.y_pos = pos[1]
+		self.font = font
+		self.base_color, self.hovering_color = base_color, hovering_color
+		self.text_input = text_input
+		self.text = self.font.render(self.text_input, True, self.base_color)
+		if self.image is None:
+			self.image = self.text
+		self.rect = self.image.get_rect(center=(self.x_pos, self.y_pos))
+		self.text_rect = self.text.get_rect(center=(self.x_pos, self.y_pos))
+
+	def update(self, screen):
+		if self.image is not None:
+			screen.blit(self.image, self.rect)
+		screen.blit(self.text, self.text_rect)
+
+	def checkForInput(self, position):
+		if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top, self.rect.bottom):
+			return True
+		return False
+
+	def changeColor(self, position):
+		if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top, self.rect.bottom):
+			self.text = self.font.render(self.text_input, True, self.hovering_color)
+		else:
+			self.text = self.font.render(self.text_input, True, self.base_color)
 class Block(pygame.sprite.Sprite):
     def __init__(self, x_pos, y_pos, obj_width, obj_height):
         super().__init__()
@@ -162,7 +191,48 @@ class GameManager:
         
         screen.blit(player_score,player_score_rect)
         screen.blit(opponent_score,opponent_score_rect)
+
+def main_menu():
+    global play_mode
+    menu_bg_color = pygame.Color("#432818")
+    menu_title_font = pygame.font.SysFont("PokemonGb",80)
+    menu_text_font = pygame.font.SysFont("PokemonGb",50)
+    while True:
+        screen.fill(menu_bg_color)
+        menu_mouse_position=pygame.mouse.get_pos()
+        menu_text = menu_title_font.render("MAIN MENU", True,"#bb9457")
+        menu_rect = menu_text.get_rect(center=(640,200))
         
+        player1_button = Button(None, pos=(640, 400), 
+                            text_input="1 PLAYER", font=menu_text_font, base_color="#ffe6a7", hovering_color="White")
+        player2_button = Button(None, pos=(640, 500), 
+                            text_input="2 PLAYERS", font=menu_text_font, base_color="#ffe6a7", hovering_color="White")
+        quit_button = Button(None, pos=(640, 600), 
+                            text_input="QUIT", font=menu_text_font, base_color="#ffe6a7", hovering_color="White")
+
+        screen.blit(menu_text,menu_rect)
+        
+        for button in [player1_button, player2_button, quit_button]:
+            button.changeColor(menu_mouse_position)
+            button.update(screen)
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if player1_button.checkForInput(menu_mouse_position):
+                    play_mode = 1
+                    return
+                if player2_button.checkForInput(menu_mouse_position):
+                    play_mode = 2
+                    return
+                if quit_button.checkForInput(menu_mouse_position):
+                    pygame.quit()
+                    sys.exit()
+                    
+        pygame.display.update()
+
 # GENERAL SETUP
 pygame.mixer.pre_init(44100,-16,2,512)
 pygame.init()
@@ -172,7 +242,10 @@ clock=pygame.time.Clock()
 screen_width = 1280
 screen_height =  960
 screen = pygame.display.set_mode((screen_width,screen_height)) #create a display surface
-pygame.display.set_caption('Pong Game')
+pygame.display.set_caption('Menu')
+play_mode = None
+main_menu()
+
 middle_strip = pygame.Rect(screen_width / 2 - 2, 0, 4, screen_height) #draw the line that separates the players
 
 # GLOBAL VARIABLES
@@ -181,6 +254,7 @@ bg_color=pygame.Color("#432818")
 players_color=pygame.Color("#BB9457")
 strip_color=pygame.Color("#99582A")
 text_color = pygame.Color("#FFE6A7")
+
 
 # 3. FONTS
 score_font = pygame.font.SysFont("lucidasanstypewriterregular",50)
@@ -191,48 +265,101 @@ pong_sound = pygame.mixer.Sound("pong.ogg")
 score_sound = pygame.mixer.Sound("score.ogg")
 
 # GAME OBJECTS
-player = Player(screen_width - 20, screen_height / 2 - 70, 10, 140, 7)
-opponent = Opponent(10, screen_height / 2 - 70, 10, 140, 5)
-paddle_group = pygame.sprite.Group()
-paddle_group.add(player)
-paddle_group.add(opponent)
+if play_mode==1:
+    player = Player(screen_width - 20, screen_height / 2 - 70, 10, 140, 7)
+    opponent = Opponent(10, screen_height / 2 - 70, 10, 140, 5)
+    paddle_group = pygame.sprite.Group()
+    paddle_group.add(player)
+    paddle_group.add(opponent)
 
-ball = Ball(screen_width/2, screen_height/2, 20, 5, 5, paddle_group)
+    ball = Ball(screen_width/2, screen_height/2, 20, 5, 5, paddle_group)
 
-ball_sprite = pygame.sprite.GroupSingle()
-ball_sprite.add(ball)
+    ball_sprite = pygame.sprite.GroupSingle()
+    ball_sprite.add(ball)
 
-game_manager = GameManager(ball_sprite,paddle_group)
+    game_manager = GameManager(ball_sprite,paddle_group)
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        if event.type == pygame.KEYDOWN:
-            #this event is triggerred when a key on the keyboard is pressed down
-            if event.key == pygame.K_DOWN:
-                player.movement+=player.speed
-            if event.key == pygame.K_UP:
-                player.movement-=player.speed
-            
-        if event.type == pygame.KEYUP:
-            #this event is triggered when a key on the keyboard is released
-            if event.key == pygame.K_DOWN:
-                player.movement-=player.speed
-            if event.key == pygame.K_UP:
-                player.movement+=player.speed
-            
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                #this event is triggerred when a key on the keyboard is pressed down
+                if event.key == pygame.K_DOWN:
+                    player.movement+=player.speed
+                if event.key == pygame.K_UP:
+                    player.movement-=player.speed
+                
+            if event.type == pygame.KEYUP:
+                #this event is triggered when a key on the keyboard is released
+                if event.key == pygame.K_DOWN:
+                    player.movement-=player.speed
+                if event.key == pygame.K_UP:
+                    player.movement+=player.speed
+        # VISUALS
+        screen.fill(bg_color)
+        pygame.draw.rect(screen,strip_color,middle_strip)
+        
+        # START GAME
+        game_manager.run_game()
 
-    # VISUALS
-    screen.fill(bg_color)
-    pygame.draw.rect(screen,strip_color,middle_strip)
+        # RENDERING
+        pygame.display.flip()
+        clock.tick(60)  # limits how fast a loop runs, 60 frames per second in this case
+                        # we need to control the speed because python tends to run code as fast as possible
+
+else:
+    player1 = Player(screen_width - 20, screen_height / 2 - 70, 10, 140, 7)
+    player2 = Player(10, screen_height / 2 - 70, 10, 140, 7)
+    paddle_group = pygame.sprite.Group()
+    paddle_group.add(player1)
+    paddle_group.add(player2)
+
+    ball = Ball(screen_width/2, screen_height/2, 20, 5, 5, paddle_group)
+
+    ball_sprite = pygame.sprite.GroupSingle()
+    ball_sprite.add(ball)
+
+    game_manager = GameManager(ball_sprite,paddle_group)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                #this event is triggerred when a key on the keyboard is pressed down
+                if event.key == pygame.K_DOWN:
+                    player1.movement+=player1.speed
+                if event.key == pygame.K_UP:
+                    player1.movement-=player1.speed
+                if event.key == pygame.K_s:  # "S" key for Player 2
+                    player2.movement += player2.speed
+                if event.key == pygame.K_w:  # "W" key for Player 2
+                    player2.movement -= player2.speed
+            if event.type == pygame.KEYUP:
+                #this event is triggered when a key on the keyboard is released
+                if event.key == pygame.K_DOWN:
+                    player1.movement-=player1.speed
+                if event.key == pygame.K_UP:
+                    player1.movement+=player1.speed
+                if event.key == pygame.K_s:  # "S" key for Player 2
+                    player2.movement -= player2.speed
+                if event.key == pygame.K_w:  # "W" key for Player 2
+                    player2.movement += player2.speed
+        # VISUALS
+        screen.fill(bg_color)
+        pygame.draw.rect(screen,strip_color,middle_strip)
+        
+        # START GAME
+        game_manager.run_game()
+
+        # RENDERING
+        pygame.display.flip()
+        clock.tick(60)  # limits how fast a loop runs, 60 frames per second in this case
+                        # we need to control the speed because python tends to run code as fast as possible
     
-    # START GAME
-    game_manager.run_game()
-
-    # RENDERING
-    pygame.display.flip()
-    clock.tick(60)  # limits how fast a loop runs, 60 frames per second in this case
-                    # we need to control the speed because python tends to run code as fast as possible
             
+
+    
