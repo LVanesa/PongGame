@@ -6,35 +6,7 @@ import sys,pygame,random
         # Game Rectangles
         # Rect(x,y,width,height) -> these are empty rectangles
         # to actually visualize this rectangles we need to draw them -> pygame.draw(surface,color,rect)
-class Button():
-	def __init__(self, image, pos, text_input, font, base_color, hovering_color):
-		self.image = image
-		self.x_pos = pos[0]
-		self.y_pos = pos[1]
-		self.font = font
-		self.base_color, self.hovering_color = base_color, hovering_color
-		self.text_input = text_input
-		self.text = self.font.render(self.text_input, True, self.base_color)
-		if self.image is None:
-			self.image = self.text
-		self.rect = self.image.get_rect(center=(self.x_pos, self.y_pos))
-		self.text_rect = self.text.get_rect(center=(self.x_pos, self.y_pos))
 
-	def update(self, screen):
-		if self.image is not None:
-			screen.blit(self.image, self.rect)
-		screen.blit(self.text, self.text_rect)
-
-	def checkForInput(self, position):
-		if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top, self.rect.bottom):
-			return True
-		return False
-
-	def changeColor(self, position):
-		if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top, self.rect.bottom):
-			self.text = self.font.render(self.text_input, True, self.hovering_color)
-		else:
-			self.text = self.font.render(self.text_input, True, self.base_color)
 class Block(pygame.sprite.Sprite):
     def __init__(self, x_pos, y_pos, obj_width, obj_height):
         super().__init__()
@@ -191,6 +163,35 @@ class GameManager:
         
         screen.blit(player_score,player_score_rect)
         screen.blit(opponent_score,opponent_score_rect)
+class Button():
+	def __init__(self, image, pos, text_input, font, base_color, hovering_color):
+		self.image = image
+		self.x_pos = pos[0]
+		self.y_pos = pos[1]
+		self.font = font
+		self.base_color, self.hovering_color = base_color, hovering_color
+		self.text_input = text_input
+		self.text = self.font.render(self.text_input, True, self.base_color)
+		if self.image is None:
+			self.image = self.text
+		self.rect = self.image.get_rect(center=(self.x_pos, self.y_pos))
+		self.text_rect = self.text.get_rect(center=(self.x_pos, self.y_pos))
+
+	def update(self, screen):
+		if self.image is not None:
+			screen.blit(self.image, self.rect)
+		screen.blit(self.text, self.text_rect)
+
+	def checkForInput(self, position):
+		if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top, self.rect.bottom):
+			return True
+		return False
+
+	def changeColor(self, position):
+		if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top, self.rect.bottom):
+			self.text = self.font.render(self.text_input, True, self.hovering_color)
+		else:
+			self.text = self.font.render(self.text_input, True, self.base_color)
 
 def main_menu():
     global play_mode
@@ -244,6 +245,7 @@ screen_height =  960
 screen = pygame.display.set_mode((screen_width,screen_height)) #create a display surface
 pygame.display.set_caption('Menu')
 play_mode = None
+
 main_menu()
 
 middle_strip = pygame.Rect(screen_width / 2 - 2, 0, 4, screen_height) #draw the line that separates the players
@@ -264,8 +266,11 @@ text_font = pygame.font.SysFont("lucidasanstypewriterregular",100)
 pong_sound = pygame.mixer.Sound("pong.ogg")
 score_sound = pygame.mixer.Sound("score.ogg")
 
-# GAME OBJECTS
+# GAME MODES
 if play_mode==1:
+    pygame.display.set_caption('PongGame: single-player mode')
+    
+    # GAME OBJECTS
     player = Player(screen_width - 20, screen_height / 2 - 70, 10, 140, 7)
     opponent = Opponent(10, screen_height / 2 - 70, 10, 140, 5)
     paddle_group = pygame.sprite.Group()
@@ -310,6 +315,9 @@ if play_mode==1:
                         # we need to control the speed because python tends to run code as fast as possible
 
 else:
+    pygame.display.set_caption('PongGame: player vs. player mode')
+    
+    # GAME OBJECTS
     player1 = Player(screen_width - 20, screen_height / 2 - 70, 10, 140, 7)
     player2 = Player(10, screen_height / 2 - 70, 10, 140, 7)
     paddle_group = pygame.sprite.Group()
